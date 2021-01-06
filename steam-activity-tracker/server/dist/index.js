@@ -41,4 +41,23 @@ app.get('/steamgetplayersummaries/:id', (req, res) => {
         res.status(500);
     }
 });
+app.post('/addaccount/:id', (req, res) => {
+    const { id } = req.params;
+    if (!id) {
+        res.status(400);
+    }
+    config_1.pool.query('INSERT INTO users (steamid) VALUES ($1)', [req.params.id], (error) => {
+        if (error) {
+            if (error.code === '23505') {
+                res.status(409).json({ status: 'conflict' });
+            }
+            else {
+                res.status(500).json({ status: 'internal server error' });
+            }
+        }
+        else {
+            res.status(201).json({ status: 'success', message: 'user added.' });
+        }
+    });
+});
 //# sourceMappingURL=index.js.map

@@ -12,4 +12,22 @@ export class HttpRequests {
         }
     }
 
+    static async addUser(steamid: string): Promise<any> {
+        const url = `${process.env.REACT_APP_BACKEND_URL}/addaccount/${steamid}`;
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+        });
+        if (response.status === 201) {
+            return Promise.resolve('added')
+        } else if (response.status === 409) {
+            return Promise.resolve('conflict')
+        } else {
+            return Promise.reject(response.statusText)
+        }
+    }
+
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { HttpRequests } from '../../utilities/http-requesnts'
 
 interface SteamUserFound {
@@ -22,27 +22,50 @@ interface SteamUserFound {
     timecreated: number
 }
 
+interface AddUserMessage {
+    message: string,
+    error: boolean
+}
+
 export function AddSteamAccount() {
     const [steamid, setSteamid] = useState<string>("");
     const [steamUserFound, setSteamUserFound] = useState<SteamUserFound | null>(null);
-    const [errorMessage, setErrorMessage] = useState<string | null>(null)
+    const [steamUsererrorMessage, setSteamUserErrorMessage] = useState<string | null>(null);
+    const [userAddMessage, setUserAddMessage] = useState<AddUserMessage | null>(null);
+
 
 
     const inputSteamid = async (e: any) => {
+        setSteamUserFound(null)
+        setUserAddMessage(null)
         setSteamid(e.target.value)
         if (e.target.value.length === 17) {
             const steamUser = await HttpRequests.GetPlayerSummaries(e.target.value)
             if (steamUser !== 'no user') {
                 setSteamUserFound(steamUser.data)
-                setErrorMessage(null)
+                setSteamUserErrorMessage(null)
             } else if (steamUser === 'no user') {
-                setErrorMessage('No steam user found with this id')
+                setSteamUserErrorMessage('No steam user found with this id')
                 setSteamUserFound(null)
             } else {
-                setErrorMessage('Internal server error')
+                setSteamUserErrorMessage('Internal server error')
                 setSteamUserFound(null)
             }
         }
+    }
+
+    const addUser = async () => {
+        const request = await HttpRequests.addUser(steamid);
+        if (request === 'added') {
+            setUserAddMessage({ message: 'User has been added', error: false })
+            setSteamUserFound(null);
+            setSteamid('')
+        } else if (request === 'conflict') {
+            setUserAddMessage({ message: 'User already exists in database', error: true })
+        } else {
+            setUserAddMessage({ message: 'Server error', error: true })
+        }
+
     }
 
     return (
@@ -53,12 +76,18 @@ export function AddSteamAccount() {
                 {steamUserFound &&
                     <div style={{ marginTop: "7px" }}>
                         <h3>{steamUserFound.personaname}<img src={steamUserFound.avatarmedium} style={{ marginLeft: "10px" }} alt="steam profile image" /></h3>
-                        <button type="button" className="btn btn-success">Add {steamUserFound.personaname}</button>
+                        <button onClick={addUser} type="button" className="btn btn-success">Add {steamUserFound.personaname}</button>
                     </div>
                 }
-                {errorMessage &&
+                {steamUsererrorMessage &&
                     <div style={{ marginTop: "7px" }}>
-                        <p style={{ color: 'red' }}>{errorMessage}</p>
+                        <p style={{ color: 'red' }}>{steamUsererrorMessage}</p>
+                    </div>
+                }
+
+                {userAddMessage != null &&
+                    <div style={{ marginTop: "7px" }}>
+                        {userAddMessage.error ? <p style={{ color: 'red' }}>{userAddMessage.message}</p> : <p style={{ color: 'green' }}>{userAddMessage.message}</p>}
                     </div>
                 }
             </div>
